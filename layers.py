@@ -58,6 +58,9 @@ class Linear(Layer):
         return tmp + self.noise
 
     def backward(self, loss):
+        # input.shape: N, input_features
+        # loss[:, np.newaxis].shape: N, 1
+        # loss: A B C | A B C | A B C | ...
         input = self.cache
 
         w_term = input * loss[:, np.newaxis]
@@ -99,15 +102,22 @@ class Conv(Layer):
 
         input_col = im2col(input, self.kernel_size, self.kernel_size,
                            self.stride, self.padding, self.device).T
+
         self.cache = input, input_col
         tmp = input_col @ self.W['val'] + self.b['val']
+
         self.noise = torch.randn(size=tmp.shape, device=self.device) * self.noise_std
         output_col = tmp + self.noise
-        output = torch.cat(torch.split(output_col, 1, dim=1)).reshape((N, _C, _H, _W))
+        output = torch.cat(torch.split(output_col, 1, dim=0)).reshape((N, _C, _H, _W))
+
         return output
 
     def backward(self, loss):
+        # input.shape: N, C, H, W
+        # input_col.shape: N, C * H * W
+        # loss_col.shape: N, 1
         input, input_col = self.cache
+
         loss_col = loss.expand(int(input_col.shape[0] / input.shape[0]), len(loss)).T.reshape(-1,1)
 
         w_term = input_col * loss_col

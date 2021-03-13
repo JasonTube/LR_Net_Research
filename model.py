@@ -51,24 +51,50 @@ class DenseNet(Net):
         return output
 
 
+class DenseNet_CNN(Net):
+
+    def __init__(self, device=torch.device('cuda:0')):
+        super().__init__(device)
+
+        # self.fc1 = Linear(28*28, 25, noise_std=1e-0, device=self.device)
+        self.fc1 = Conv(1, 25, kernel_size=25, noise_std=1e-0, act='TanH', device=self.device)
+        self.act1 = Activation('TanH')
+        self.fc2 = Linear(16*25, 10, noise_std=1e-0, device=self.device)
+        self.softmax = Activation('Softmax')
+
+        self.layers = [self.fc1, self.fc2]
+
+    def forward(self, input):
+        #input = input.reshape(len(input), -1)
+
+        fc_out_1 = self.fc1.forward(input)
+        act_out_1 = self.act1.forward(fc_out_1)
+
+        act_out_1 = act_out_1.reshape(len(act_out_1), -1)
+
+        fc_out_2 = self.fc2.forward(act_out_1)
+        output = self.softmax.forward(fc_out_2)
+        return output
+
+
 class LeNet5(Net):
 
     def __init__(self, device=torch.device('cuda:0')):
         super().__init__(device)
 
-        self.conv1 = Conv(1, 6, kernel_size=5, noise_std=1e-1, act='ReLU', device=self.device)
+        self.conv1 = Conv(1, 6, kernel_size=5, noise_std=1e-0, act='ReLU', device=self.device)
         self.act1 = Activation('ReLU')
         self.pool1 = Pool(2, device=self.device)
 
-        self.conv2 = Conv(6, 16, kernel_size=5, noise_std=1e-1, act='ReLU', device=self.device)
+        self.conv2 = Conv(6, 16, kernel_size=5, noise_std=1e-0, act='ReLU', device=self.device)
         self.act2 = Activation('ReLU')
         self.pool2 = Pool(2, device=self.device)
 
-        self.fc1 = Linear(256, 120, noise_std=1e-1, act='ReLU', device=self.device)
+        self.fc1 = Linear(256, 120, noise_std=1e-0, act='ReLU', device=self.device)
         self.act3 = Activation('ReLU')
-        self.fc2 = Linear(120, 84, noise_std=1e-1, act='ReLU', device=self.device)
+        self.fc2 = Linear(120, 84, noise_std=1e-0, act='ReLU', device=self.device)
         self.act4 = Activation('ReLU')
-        self.fc3 = Linear(84, 10, noise_std=1e-1, act='ReLU', device=self.device)
+        self.fc3 = Linear(84, 10, noise_std=1e-0, act='ReLU', device=self.device)
         self.softmax = Activation('Softmax')
 
         self.layers = [self.conv1, self.conv2, self.fc1, self.fc2, self.fc3]
@@ -99,13 +125,13 @@ class ShallowConvNet(Net):
     def __init__(self, device=torch.device('cuda:0')):
         super().__init__(device)
 
-        self.conv1 = Conv(1, 6, kernel_size=5, noise_std=1e-1, act='TanH', device=self.device)
+        self.conv1 = Conv(1, 6, kernel_size=5, noise_std=1e-0, act='TanH', device=self.device)
         self.act1 = Activation('TanH')
         self.pool1 = Pool(2, device=self.device)
 
-        self.fc1 = Linear(6*12*12, 100, noise_std=1e-1, act='TanH', device=self.device)
+        self.fc1 = Linear(6*12*12, 100, noise_std=1e-0, act='TanH', device=self.device)
         self.act2 = Activation('TanH')
-        self.fc2 = Linear(100, 10, noise_std=1e-1, act='TanH', device=self.device)
+        self.fc2 = Linear(100, 10, noise_std=1e-0, act='TanH', device=self.device)
         self.softmax = Activation('Softmax')
 
         self.layers = [self.conv1, self.fc1, self.fc2]

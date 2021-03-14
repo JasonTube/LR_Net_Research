@@ -26,7 +26,7 @@ class Layer:
             return torch.randn(size=tuple(weight_size), device=self.device) * std
         elif init_name == "kaiming_normal":
             if act == "TanH":
-                gain = 5/3
+                gain = 5 / 3
             elif act == "ReLU":
                 gain = np.sqrt(2)
             fan = fan_in if mode == 'fan_in' else fan_out
@@ -45,7 +45,7 @@ class Linear(Layer):
 
         self.w_size = (self.input_features, self.output_features)
         self.b_size = (1, self.output_features)
-        self.W = {'val': self.init("kaiming_normal", self.w_size, act=self.act),  'grad': 0.}
+        self.W = {'val': self.init("kaiming_normal", self.w_size, act=self.act), 'grad': 0.}
         self.b = {'val': self.init("kaiming_normal", self.b_size, act=self.act), 'grad': 0.}
 
         self.noise_std = noise_std
@@ -64,11 +64,11 @@ class Linear(Layer):
         input = self.cache
 
         w_term = input * loss[:, np.newaxis]
-        w_batch_grad = torch.einsum('ni, nj->ij', w_term, self.noise) / self.noise_std
+        w_batch_grad = torch.einsum('ni, nj->ij', w_term, self.noise) / (self.noise_std ** 2)
         self.W['grad'] = w_batch_grad / input.shape[0]
 
         b_term = torch.ones(size=[len(self.noise), 1], device=self.device) * loss[:, np.newaxis]
-        b_batch_grad = torch.einsum('ni, nj->ij', b_term, self.noise) / self.noise_std
+        b_batch_grad = torch.einsum('ni, nj->ij', b_term, self.noise) / (self.noise_std ** 2)
         self.b['grad'] = b_batch_grad / input.shape[0]
 
         return self.W['grad'], self.b['grad']
@@ -95,6 +95,7 @@ class Conv(Layer):
         self.noise = None
 
     def forward(self, input):
+
         N, C, H, W = input.shape
         _C = self.out_channels
         _H = int((H + 2 * self.padding - self.kernel_size) / self.stride) + 1
@@ -108,20 +109,28 @@ class Conv(Layer):
 
         self.noise = torch.randn(size=tmp.shape, device=self.device) * self.noise_std
         output_col = tmp + self.noise
-        output = torch.cat(torch.split(output_col, 1, dim=0)).reshape((N, _C, _H, _W))
 
+        output = output_col.reshape((N, _C, _H, _W))
+        # output = torch.cat(torch.split(output_col, 1, dim=0)).reshape((N, _C, _H, _W)) # main problem of speed
         return output
 
     def backward(self, loss):
-        # input.shape: N, C, H, W
-        # input_col.shape: N, C * H * W
-        # loss_col.shape: N, 1
+        """
+        input.shape: N, in_channels, in_height, in_width
+        input_col.shape: N * conv_work_num, out_channels * kernel_size * kernel_size
+        loss.shape: N
+        loss_col.shape: N * conv_work_num, 1
+        w_term.shape: N * conv_work_num, in_channels * kernel_size * kernel_size
+        noise.shape: N * conv_work_num, out_channels
+        W['val'].shape: in_channels * kernel_size * kernel_size, out_channels
+        """
         input, input_col = self.cache
 
-        loss_col = loss.expand(int(input_col.shape[0] / input.shape[0]), len(loss)).T.reshape(-1,1)
+        loss_col = loss.expand(int(input_col.shape[0] / input.shape[0]), len(loss)).T.reshape(-1, 1)
 
         w_term = input_col * loss_col
-        w_batch_grad = torch.einsum('ni, nj->ij', w_term, self.noise) / self.noise_std
+        w_batch_grad = (w_term.T @ self.noise) / self.noise_std
+        # w_batch_grad = torch.einsum('ni, nj->ij', w_term, self.noise) / self.noise_std
         self.W['grad'] = w_batch_grad / input_col.shape[0]
 
         b_term = torch.ones(size=[len(self.noise), 1], device=self.device) * loss_col

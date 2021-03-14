@@ -126,8 +126,7 @@ class Conv(Layer):
         loss_col = loss.expand(int(input_col.shape[0] / input.shape[0]), len(loss)).T.reshape(-1, 1)
 
         w_term = input_col * loss_col
-        w_batch_grad = (w_term.T @ self.noise) / self.noise_std
-        # w_batch_grad = torch.einsum('ni, nj->ij', w_term, self.noise) / self.noise_std
+        w_batch_grad = torch.einsum('ni, nj->ij', w_term, self.noise) / self.noise_std
         self.W['grad'] = w_batch_grad / input_col.shape[0]
 
         b_term = torch.ones(size=[len(self.noise), 1], device=self.device) * loss_col

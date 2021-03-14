@@ -15,9 +15,9 @@ class Options(object):
         parser.add_argument('--lr', type=float, default=1e-2, help='initial learning rate')
         parser.add_argument('--step_size', type=int, default=20, help='step size in lr_scheduler for optimizer')
         parser.add_argument('--gamma', type=float, default=0.8, help='gamma in lr_scheduler for optimizer')
-        parser.add_argument('--epochs_SGD', type=int, default=1, help='epochs for SGD optimizer')
-        parser.add_argument('--epochs_AdamGD', type=int, default=0, help='epochs for AdamGD optimizer')
-        parser.add_argument('--repeat_num', type=int, default=25, help='data repeat num')
+        parser.add_argument('--epochs_SGD', type=int, default=5, help='epochs for SGD optimizer')
+        parser.add_argument('--epochs_AdamGD', type=int, default=5, help='epochs for AdamGD optimizer')
+        parser.add_argument('--repeat_num', type=int, default=50, help='data repeat num')
         self.parser = parser
 
     def parse(self):
@@ -30,9 +30,9 @@ class Options(object):
 if __name__ == '__main__':
     args = Options().parse()
 
-    args.model = DenseNet_CNN(args.device)
+    # args.model = DenseNet_CNN(args.device)
     # args.model = DenseNet(args.device)
-    # args.model = LeNet5(args.device)
+    args.model = LeNet5(args.device)
     # args.model = ShallowConvNet(args.device)
     args.train_loader, args.valid_loader = get_train_valid_loader('./',
                                                                   batch_size=args.batch_size,

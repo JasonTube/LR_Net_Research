@@ -58,9 +58,6 @@ class Linear(Layer):
         return tmp + self.noise
 
     def backward(self, loss):
-        # input.shape: N, input_features
-        # loss[:, np.newaxis].shape: N, 1
-        # loss: A B C | A B C | A B C | ...
         input = self.cache
 
         w_term = input * loss[:, np.newaxis]

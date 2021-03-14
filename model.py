@@ -82,33 +82,39 @@ class LeNet5(Net):
     def __init__(self, device=torch.device('cuda:0')):
         super().__init__(device)
 
-        self.conv1 = Conv(1, 6, kernel_size=5, noise_std=1e-0, act='ReLU', device=self.device)
-        self.act1 = Activation('ReLU')
+        self.conv1 = Conv(1, 6, kernel_size=5, noise_std=1e-0, act='TanH', device=self.device)
+        self.act1 = Activation('TanH')
         self.pool1 = Pool(2, device=self.device)
 
-        self.conv2 = Conv(6, 16, kernel_size=5, noise_std=1e-0, act='ReLU', device=self.device)
-        self.act2 = Activation('ReLU')
+        self.conv2 = Conv(6, 16, kernel_size=5, noise_std=1e-0, act='TanH', device=self.device)
+        self.act2 = Activation('TanH')
         self.pool2 = Pool(2, device=self.device)
 
-        self.fc1 = Linear(256, 120, noise_std=1e-0, act='ReLU', device=self.device)
-        self.act3 = Activation('ReLU')
-        self.fc2 = Linear(120, 84, noise_std=1e-0, act='ReLU', device=self.device)
-        self.act4 = Activation('ReLU')
-        self.fc3 = Linear(84, 10, noise_std=1e-0, act='ReLU', device=self.device)
+        self.fc1 = Linear(256, 120, noise_std=1e-0, act='TanH', device=self.device)
+        self.act3 = Activation('TanH')
+        self.fc2 = Linear(120, 84, noise_std=1e-0, act='TanH', device=self.device)
+        self.act4 = Activation('TanH')
+        self.fc3 = Linear(84, 10, noise_std=1e-0, act='TanH', device=self.device)
         self.softmax = Activation('Softmax')
 
         self.layers = [self.conv1, self.conv2, self.fc1, self.fc2, self.fc3]
 
     def forward(self, input):
+        # N, 1, 28, 28
         conv_out_1 = self.conv1.forward(input)
+        # N, 6, 24, 24
         act_out_1 = self.act1.forward(conv_out_1)
         pool_out_1 = self.pool1.forward(act_out_1)
+        # N, 6, 12, 12
 
         conv_out_2 = self.conv2.forward(pool_out_1)
+        # N, 16, 8, 8
         act_out_2 = self.act2.forward(conv_out_2)
         pool_out_2 = self.pool2.forward(act_out_2)
+        # N, 16, 4, 4
 
         pool_out_2 = pool_out_2.reshape(len(pool_out_2), -1)
+        # N, 256
 
         fc_out_1 = self.fc1.forward(pool_out_2)
         act_out_3 = self.act3.forward(fc_out_1)
